@@ -1,5 +1,7 @@
 package mob.com.project.remindme.ui.home
 
+import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,8 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import mob.com.project.remindme.R
 import mob.com.project.remindme.navigation.BottomNavBar
 import mob.com.project.remindme.ui.theme.*
 import mob.com.project.remindme.viewmodel.ListViewModel
@@ -38,14 +43,15 @@ fun HomeScreen(
     }
     //states for keeping track of current values for selected reminder
     val msgState = rememberSaveable { mutableStateOf("") }
-    val locationxState: MutableState<Float> = rememberSaveable { mutableStateOf(0.0f) }
-    val locationyState: MutableState<Float> = rememberSaveable { mutableStateOf(0.0f) }
+    val locationXState: MutableState<Float> = rememberSaveable { mutableStateOf(0.0f) }
+    val locationYState: MutableState<Float> = rememberSaveable { mutableStateOf(0.0f) }
     val reminderIdState: MutableState<Long?> = rememberSaveable { mutableStateOf(null) }
     val reminderTime = rememberSaveable { mutableStateOf("") }
     val creationTime = rememberSaveable { mutableStateOf("") }
     val creatorIdState: MutableState<Long?> = rememberSaveable { mutableStateOf(null) }
     val reminderSeenState: MutableState<Boolean> = rememberSaveable { mutableStateOf(false) }
     val selectedReminder = homeViewModel.findReminder(reminderIdState.value).collectAsState(initial = null)
+    //val dateTimeState: MutableState<LocalDateTime> = rememberSaveable{mutableStateOf(LocalDateTime.now())}
 
     val itemListState = homeViewModel.reminderListF.collectAsState(initial = listOf())
 
@@ -78,8 +84,8 @@ fun HomeScreen(
                         .clickable {
                             //update states
                             msgState.value = item.message
-                            locationxState.value = item.location_x
-                            locationyState.value = item.location_y
+                            locationXState.value = item.location_x
+                            locationYState.value = item.location_y
                             reminderIdState.value = item.reminderId
                             reminderTime.value = item.reminder_time
                             creationTime.value = item.creation_time
@@ -88,18 +94,84 @@ fun HomeScreen(
                             //if existing item is clicked, set pop up state to modify
                             modifyPopupState.value = ModifyPopupState.Modify
                         }
-                        .height(100.dp)){
-                        Text(
-                            modifier = Modifier
-                                .align(Alignment.CenterStart)
-                                .padding(10.dp),
-                            text = "${item.message} --- ${item.reminder_time}",
-                            color = Color.Black)
+                        .padding(horizontal = 12.dp, vertical = 20.dp)){
+                        Column(){
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.Start
+                            ) {
+                                Text(
+                                    text = "Message: ",
+                                    color = PurpleDefault,
+                                )
+                                Text(
+                                    text = "${item.message}",
+                                    color = Color.Black
+                                )
+                            }
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.Start
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.calendarpurple),
+                                    contentDescription = "Calendar image",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                )
+                                Text(
+                                    text = " ${LocalDateTime.parse(item.reminder_time).year} ${LocalDateTime.parse(item.reminder_time).month} ${LocalDateTime.parse(item.reminder_time).dayOfMonth}    ",
+                                    color = Color.Black
+                                )
+                                Image(
+                                    painter = painterResource(id = R.drawable.clockpurple),
+                                    contentDescription = "Clock image",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                )
+                                if (LocalDateTime.parse(item.reminder_time).minute > 9) {
+                                    Text(
+                                        text = "  ${LocalDateTime.parse(item.reminder_time).hour}:${LocalDateTime.parse(item.reminder_time).minute}",
+                                        color = Color.Black
+                                    )
+                                }
+                                else {
+                                    Text(
+                                        text = "  ${LocalDateTime.parse(item.reminder_time).hour}:0${LocalDateTime.parse(item.reminder_time).minute}",
+                                        color = Color.Black
+                                    )
+                                }
+                            }
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.Start
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.pin_tp),
+                                    contentDescription = "Map pin image",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                )
+                                Text(
+                                    text = "  ${item.location_x} , ${item.location_y}",
+                                    color = Color.Black
+                                )
+                            }
+                        }
+                    }
+                    Box(modifier = Modifier
+                        .fillMaxWidth()) {
                         Spacer(modifier = Modifier
                             .fillMaxWidth(0.90f)
                             .height(1.5.dp)
                             .background(PurpleDefault)
-                            .align(Alignment.BottomCenter)
+                            .align(alignment = Alignment.Center)
                         )
                     }
                 }
@@ -130,8 +202,8 @@ fun HomeScreen(
                         //pass current values
                         id = reminderIdState.value,
                         message = msgState.value,
-                        location_x = locationxState.value.toString(),
-                        location_y = locationyState.value.toString(),
+                        location_x = locationXState.value.toString(),
+                        location_y = locationYState.value.toString(),
                         reminder_time = reminderTime.value,
                         creation_time = creationTime.value,
                         creator_id = creatorIdState.value,

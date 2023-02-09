@@ -73,11 +73,23 @@ fun ModifyReminder(
     })
     ClockDialog(state = clockState,
         config = ClockConfig(
-            is24HourFormat = true
+            is24HourFormat = true,
         ),
         selection = ClockSelection.HoursMinutes { hours, minutes ->
             //if new time was selected, update state
-            clockStringState.value = "$hours:$minutes:00.0"
+            //if hours of minutes is smaller than 10, add 0 before number
+            if(hours < 9 && minutes < 9) {
+                clockStringState.value = "0$hours:0$minutes:00.0"
+            }
+            else if (hours < 9) {
+                clockStringState.value = "0$hours:$minutes:00.0"
+            }
+            else if (minutes < 9) {
+                clockStringState.value = "$hours:0$minutes:00.0"
+            }
+            else {
+                clockStringState.value = "$hours:$minutes:00.0"
+            }
         }
     )
 
@@ -181,8 +193,7 @@ fun ModifyReminder(
                         .clickable {
                             //if new time was picked, replace reminder time
                             if (calendarStringState.value != "" && clockStringState.value != "") {
-                                reminderTimeState.value =
-                                    "${calendarStringState.value}T${clockStringState.value}"
+                                reminderTimeState.value = "${calendarStringState.value}T${clockStringState.value}"
                             }
                             //reminder_timeState.value = "${reminder_timeDate.value}T${reminder_timeClock.value}:00.0"
                             onClickSave(
