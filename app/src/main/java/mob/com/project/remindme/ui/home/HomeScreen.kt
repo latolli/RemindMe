@@ -18,10 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import mob.com.project.remindme.R
+import mob.com.project.remindme.entity.ReminderEntity
 import mob.com.project.remindme.navigation.BottomNavBar
 import mob.com.project.remindme.ui.theme.*
 import mob.com.project.remindme.viewmodel.ListViewModel
@@ -41,17 +44,16 @@ fun HomeScreen(
     val modifyPopupState = rememberSaveable {
         mutableStateOf(ModifyPopupState.Closed)
     }
-    //states for keeping track of current values for selected reminder
-    val msgState = rememberSaveable { mutableStateOf("") }
-    val locationXState: MutableState<Float> = rememberSaveable { mutableStateOf(0.0f) }
-    val locationYState: MutableState<Float> = rememberSaveable { mutableStateOf(0.0f) }
-    val reminderIdState: MutableState<Long?> = rememberSaveable { mutableStateOf(null) }
-    val reminderTime = rememberSaveable { mutableStateOf("") }
-    val creationTime = rememberSaveable { mutableStateOf("") }
-    val creatorIdState: MutableState<Long?> = rememberSaveable { mutableStateOf(null) }
-    val reminderSeenState: MutableState<Boolean> = rememberSaveable { mutableStateOf(false) }
-    val selectedReminder = homeViewModel.findReminder(reminderIdState.value).collectAsState(initial = null)
-    //val dateTimeState: MutableState<LocalDateTime> = rememberSaveable{mutableStateOf(LocalDateTime.now())}
+    //initialize variable for reminder entity to keep track of selected reminder
+    var selectedReminder = ReminderEntity(reminderId = 0,
+                                        message = "",
+                                        location_x = 0.0f,
+                                        location_y = 0.0f,
+                                        reminder_time = "",
+                                        creation_time = "",
+                                        creator_id = 0,
+                                        reminder_seen = false
+        )
 
     val itemListState = homeViewModel.reminderListF.collectAsState(initial = listOf())
 
@@ -59,10 +61,16 @@ fun HomeScreen(
         bottomBar = { BottomNavBar(navController = navHostController)},
         floatingActionButtonPosition = FabPosition.End,
         floatingActionButton = {
-            FloatingActionButton(onClick = {
+            FloatingActionButton(
+                containerColor = PurpleDefault,
+                contentColor = WhiteSurface,
+                onClick = {
                 modifyPopupState.value = ModifyPopupState.Active
             }) {
-                Text("+")
+                Text("+", style = TextStyle(
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                ))
             }
         }
     ) { padding -> 16.dp
@@ -82,16 +90,8 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .clip(shape = RoundedCornerShape(10.dp))
                         .clickable {
-                            //update states
-                            msgState.value = item.message
-                            locationXState.value = item.location_x
-                            locationYState.value = item.location_y
-                            reminderIdState.value = item.reminderId
-                            reminderTime.value = item.reminder_time
-                            creationTime.value = item.creation_time
-                            creatorIdState.value = item.creator_id
-                            reminderSeenState.value = item.reminder_seen
-                            //if existing item is clicked, set pop up state to modify
+                            //update data of selected reminder
+                            selectedReminder = item
                             modifyPopupState.value = ModifyPopupState.Modify
                         }
                         .padding(horizontal = 12.dp, vertical = 20.dp)){
@@ -183,6 +183,7 @@ fun HomeScreen(
                     ModifyReminder(
                         //creation_time = now
                         creation_time = LocalDateTime.now().toString(),
+                        isNew = true,
                         //on save click close popup and add new reminder
                         onClickSave = {
                             homeViewModel.addReminder(
@@ -200,14 +201,14 @@ fun HomeScreen(
                     ModifyReminder(
                         //on save click close popup and update
                         //pass current values
-                        id = reminderIdState.value,
-                        message = msgState.value,
-                        location_x = locationXState.value.toString(),
-                        location_y = locationYState.value.toString(),
-                        reminder_time = reminderTime.value,
-                        creation_time = creationTime.value,
-                        creator_id = creatorIdState.value,
-                        reminder_seen = reminderSeenState.value,
+                        id = selectedReminder.reminderId,
+                        message = selectedReminder.message,
+                        location_x = selectedReminder.location_x.toString(),
+                        location_y = selectedReminder.location_y.toString(),
+                        reminder_time = selectedReminder.reminder_time,
+                        creation_time = selectedReminder.creation_time,
+                        creator_id = selectedReminder.creator_id,
+                        reminder_seen = selectedReminder.reminder_seen,
                         onClickSave = {
                             homeViewModel.updReminder(
                                 reminder = it)
@@ -216,7 +217,7 @@ fun HomeScreen(
                         onClickDismiss = {modifyPopupState.value = ModifyPopupState.Closed},
                         //on delete click delete item
                         onClickDelete = {
-                            selectedReminder.value?.let { it1 -> homeViewModel.delReminder(reminder = it1) }
+                            homeViewModel.delReminder(reminder = selectedReminder)
                             modifyPopupState.value = ModifyPopupState.Closed}
                     )
                 }

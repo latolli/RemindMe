@@ -36,6 +36,7 @@ import mob.com.project.remindme.R
 import mob.com.project.remindme.entity.ReminderEntity
 import mob.com.project.remindme.ui.theme.PurpleDefault
 import mob.com.project.remindme.ui.theme.WhiteSurface
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +50,7 @@ fun ModifyReminder(
     creation_time: String = "",
     creator_id: Long? = null,
     reminder_seen: Boolean = false,
+    isNew: Boolean = false,
     onClickSave: (ReminderEntity) -> Unit,
     onClickDismiss: () -> Unit,
     onClickDelete: () -> Unit,
@@ -77,14 +79,14 @@ fun ModifyReminder(
         ),
         selection = ClockSelection.HoursMinutes { hours, minutes ->
             //if new time was selected, update state
-            //if hours of minutes is smaller than 10, add 0 before number
-            if(hours < 9 && minutes < 9) {
+            //if hours or minutes is smaller than 10, add 0 before the number
+            if(hours <= 9 && minutes <= 9) {
                 clockStringState.value = "0$hours:0$minutes:00.0"
             }
-            else if (hours < 9) {
+            else if (hours <= 9) {
                 clockStringState.value = "0$hours:$minutes:00.0"
             }
-            else if (minutes < 9) {
+            else if (minutes <= 9) {
                 clockStringState.value = "$hours:0$minutes:00.0"
             }
             else {
@@ -106,19 +108,22 @@ fun ModifyReminder(
             Row(Modifier
                 .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "ID: ${id}", color = Color.Black)
-                Image(painter = painterResource(id = R.drawable.deletepurple),
-                    contentDescription = "Delete image",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { onClickDelete() }
-                )
+                //if we are adding new reminder, don't show id and delete buttons
+                if (!isNew) {
+                    Text(text = "ID: $id", color = Color.Black)
+                    Image(painter = painterResource(id = R.drawable.deletepurple),
+                        contentDescription = "Delete image",
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable { onClickDelete() }
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(20.dp))
             //middle row that displays all the reminder data
             Row(Modifier
                 .fillMaxWidth()) {
-                Column() {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     //field for modifying message
                     OutlinedTextField(value = messageState.value,
                         modifier = Modifier.fillMaxWidth(),
@@ -146,14 +151,6 @@ fun ModifyReminder(
                             .clickable { clockState.show() }
                         )
                     }
-
-
-                    //Button(onClick = { calendarState.show() }) {
-                    //    Text(text = "Pick date")
-                    //}
-                    //Button(onClick = { clockState.show() }) {
-                    //    Text(text = "Pick time")
-                    //}
 
                     Spacer(modifier = Modifier.height(20.dp))
                     //field for modifying location x
@@ -195,7 +192,7 @@ fun ModifyReminder(
                             if (calendarStringState.value != "" && clockStringState.value != "") {
                                 reminderTimeState.value = "${calendarStringState.value}T${clockStringState.value}"
                             }
-                            //reminder_timeState.value = "${reminder_timeDate.value}T${reminder_timeClock.value}:00.0"
+
                             onClickSave(
                                 ReminderEntity(
                                     reminderId = id,
