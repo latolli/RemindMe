@@ -110,13 +110,16 @@ fun ModifyReminder(
                 horizontalArrangement = Arrangement.SpaceBetween) {
                 //if we are adding new reminder, don't show id and delete buttons
                 if (!isNew) {
-                    Text(text = "ID: $id", color = Color.Black)
+                    Text(text = "Reminder ID: $id", color = Color.Black)
                     Image(painter = painterResource(id = R.drawable.deletepurple),
                         contentDescription = "Delete image",
                         modifier = Modifier
                             .size(24.dp)
                             .clickable { onClickDelete() }
                     )
+                }
+                else {
+                    Text(text = "New reminder", color = Color.Black)
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
