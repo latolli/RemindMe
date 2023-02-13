@@ -5,12 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,7 +16,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import mob.com.project.remindme.ui.home.HomeScreen
 import mob.com.project.remindme.ui.login.LoginScreen
 import mob.com.project.remindme.ui.profile.ProfileScreen
-import mob.com.project.remindme.ui.theme.GreyLight
 import mob.com.project.remindme.ui.theme.RemindMeTheme
 import mob.com.project.remindme.ui.theme.WhiteSurface
 import mob.com.project.remindme.viewmodel.ListViewModel
@@ -42,7 +38,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = WhiteSurface
                 ) {
-                    //HomeScreen(homeViewModel = listViewModel)
+                    //create navController
                     val navController = rememberNavController()
                     NavigationAppHost(navController = navController, viewModel = listViewModel)
                 }

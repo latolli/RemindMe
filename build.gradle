@@ -1,8 +1,10 @@
 buildscript {
     ext {
         compose_version = '1.1.1'
-        room_version = '2.4.2'
+        room_version = '2.5.0-rc01'
         hilt_version = '2.40.5'
+        work_version = '2.7.1'
+        sheets_version = '1.0.2'
         min_sdk = 26
         target_sdk = 33
         compile_sdk = 33

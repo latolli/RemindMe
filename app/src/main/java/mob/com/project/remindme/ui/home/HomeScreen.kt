@@ -1,5 +1,6 @@
 package mob.com.project.remindme.ui.home
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,15 +9,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +28,13 @@ import mob.com.project.remindme.navigation.BottomNavBar
 import mob.com.project.remindme.ui.theme.*
 import mob.com.project.remindme.viewmodel.ListViewModel
 import java.time.LocalDateTime
+import androidx.compose.material.Checkbox
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import mob.com.project.remindme.utils.calculateSecondsBetween
+import mob.com.project.remindme.work.ReminderWorker
+import java.util.concurrent.TimeUnit
 
 private enum class ModifyPopupState {
     Active, Closed, Modify
@@ -41,9 +47,18 @@ fun HomeScreen(
     homeViewModel: ListViewModel,
     navHostController: NavHostController
 ) {
+    //state for keeping track of state of reminder edit popup
     val modifyPopupState = rememberSaveable {
         mutableStateOf(ModifyPopupState.Closed)
     }
+
+    //initialize variables for delay between dates and context
+    val delayInSeconds = remember{ mutableStateOf(0)}
+    val context = LocalContext.current
+    //boolean for checking if we should show all reminders or not
+    val showAllState = remember{ mutableStateOf(false)}
+    val itemListState = homeViewModel.reminderListF.collectAsState(initial = listOf())
+
     //initialize variable for reminder entity to keep track of selected reminder
     var selectedReminder = ReminderEntity(reminderId = 0,
                                         message = "",
@@ -54,8 +69,6 @@ fun HomeScreen(
                                         creator_id = 0,
                                         reminder_seen = false
         )
-
-    val itemListState = homeViewModel.reminderListF.collectAsState(initial = listOf())
 
     Scaffold(
         bottomBar = { BottomNavBar(navController = navHostController)},
@@ -86,110 +99,163 @@ fun HomeScreen(
             ) {
                 items(itemListState.value.size){ i ->
                     val item = itemListState.value[i]
-                    Box(modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(shape = RoundedCornerShape(10.dp))
-                        .clickable {
-                            //update data of selected reminder
-                            selectedReminder = item
-                            modifyPopupState.value = ModifyPopupState.Modify
-                        }
-                        .padding(horizontal = 12.dp, vertical = 20.dp)){
-                        Column(){
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                horizontalArrangement = Arrangement.Start
-                            ) {
-                                Text(
-                                    text = "Message: ",
-                                    color = PurpleDefault,
-                                )
-                                Text(
-                                    text = "${item.message}",
-                                    color = Color.Black
-                                )
-                            }
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                horizontalArrangement = Arrangement.Start
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.calendarpurple),
-                                    contentDescription = "Calendar image",
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                )
-                                Text(
-                                    text = " ${LocalDateTime.parse(item.reminder_time).year} ${LocalDateTime.parse(item.reminder_time).month} ${LocalDateTime.parse(item.reminder_time).dayOfMonth}    ",
-                                    color = Color.Black
-                                )
-                                Image(
-                                    painter = painterResource(id = R.drawable.clockpurple),
-                                    contentDescription = "Clock image",
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                )
-                                if (LocalDateTime.parse(item.reminder_time).minute > 9) {
-                                    Text(
-                                        text = "  ${LocalDateTime.parse(item.reminder_time).hour}:${LocalDateTime.parse(item.reminder_time).minute}",
-                                        color = Color.Black
-                                    )
-                                }
-                                else {
-                                    Text(
-                                        text = "  ${LocalDateTime.parse(item.reminder_time).hour}:0${LocalDateTime.parse(item.reminder_time).minute}",
-                                        color = Color.Black
-                                    )
-                                }
-                            }
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                horizontalArrangement = Arrangement.Start
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.pin_tp),
-                                    contentDescription = "Map pin image",
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                )
-                                Text(
-                                    text = "  ${item.location_x} , ${item.location_y}",
-                                    color = Color.Black
-                                )
-                            }
+                    //on first iteration show top row
+                    if (i == 0) {
+                        Row(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 20.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Show all",
+                                color = PurpleDefault,
+                                style = TextStyle(fontSize = 22.sp)
+                            )
+                            Checkbox(
+                                checked = showAllState.value,
+                                onCheckedChange = { showAllState.value = it }
+                            )
                         }
                     }
-                    Box(modifier = Modifier
-                        .fillMaxWidth()) {
-                        Spacer(modifier = Modifier
-                            .fillMaxWidth(0.90f)
-                            .height(1.5.dp)
-                            .background(PurpleDefault)
-                            .align(alignment = Alignment.Center)
-                        )
+                    //display reminder if show all is selected or reminder has occurred or reminder doesn't have time/location
+                    if (showAllState.value || (item.reminder_time == "" && item.location_x == 0.0f && item.location_y == 0.0f)) {
+                        //draw spacer
+                        Box(modifier = Modifier
+                            .fillMaxWidth()) {
+                            Spacer(modifier = Modifier
+                                .fillMaxWidth(0.90f)
+                                .height(1.5.dp)
+                                .background(PurpleDefault)
+                                .align(alignment = Alignment.Center)
+                            )
+                        }
+                        //display reminder
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(shape = RoundedCornerShape(10.dp))
+                            .clickable {
+                                //update data of selected reminder
+                                selectedReminder = item
+                                modifyPopupState.value = ModifyPopupState.Modify
+                            }
+                            .padding(horizontal = 12.dp, vertical = 20.dp)){
+                            Column(){
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    horizontalArrangement = Arrangement.Start
+                                ) {
+                                    Text(
+                                        text = "Message: ", color = PurpleDefault,
+                                    )
+                                    Text(
+                                        text = "${item.message}", color = Color.Black
+                                    )
+                                }
+                                //if reminder time is set, display it
+                                if (item.reminder_time != "") {
+                                    Row(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        horizontalArrangement = Arrangement.Start
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.calendarpurple),
+                                            contentDescription = "Calendar image",
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Text(
+                                            text = " ${LocalDateTime.parse(item.reminder_time).year} ${LocalDateTime.parse(item.reminder_time).month} ${LocalDateTime.parse(item.reminder_time).dayOfMonth}    ",
+                                            color = Color.Black
+                                        )
+                                        Image(
+                                            painter = painterResource(id = R.drawable.clockpurple),
+                                            contentDescription = "Clock image",
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        if (LocalDateTime.parse(item.reminder_time).minute > 9) {
+                                            Text(
+                                                text = "  ${LocalDateTime.parse(item.reminder_time).hour}:${LocalDateTime.parse(item.reminder_time).minute}",
+                                                color = Color.Black
+                                            )
+                                        }
+                                        else {
+                                            Text(
+                                                text = "  ${LocalDateTime.parse(item.reminder_time).hour}:0${LocalDateTime.parse(item.reminder_time).minute}",
+                                                color = Color.Black
+                                            )
+                                        }
+                                    }
+                                }
+                                //if location is set, display it
+                                if (item.location_x != 0.0f || item.location_y != 0.0f) {
+                                    Row(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        horizontalArrangement = Arrangement.Start
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.pin_tp),
+                                            contentDescription = "Map pin image",
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Text(
+                                            text = "  ${item.location_x} , ${item.location_y}",
+                                            color = Color.Black
+                                        )
+                                    }
+                                }
+                                //TEMP ROW FOR TESTING NOTIFICATIONS
+                                //Row(
+                                //    Modifier
+                                //        .fillMaxWidth()
+                                //        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                //    horizontalArrangement = Arrangement.Start
+                                //) {
+                                //    Button(onClick = {
+                                //        if (item.reminder_time != ""){
+                                //            delayInSeconds.value = calculateSecondsBetween(LocalDateTime.now(), LocalDateTime.parse(item.reminder_time))
+                                //            Log.d("delay in seconds", "${delayInSeconds.value}")
+                                //        }
+                                //        else {
+                                //            Log.d("delay in seconds", "Reminder time = NULL")
+                                //        }
+//
+                                //        item.reminderId?.let {
+                                //            //setReminderRequest(context, 0, 0, 30, item.message, it.toInt())
+                                //        }
+                                //    }) {
+                                //        Text(text = "NOTIFICATION")
+                                //    }
+                                //}
+                            }
+                        }
                     }
                 }
             }
             //check if modify popup is active or closed
             when(modifyPopupState.value) {
-                //if active which means we are adding new reminder
+                //if active (this means we are adding a new reminder)
                 ModifyPopupState.Active -> {
                     ModifyReminder(
-                        //creation_time = now
                         creation_time = LocalDateTime.now().toString(),
                         isNew = true,
                         //on save click close popup and add new reminder
                         onClickSave = {
-                            homeViewModel.addReminder(
-                                reminder = it)
-                            modifyPopupState.value = ModifyPopupState.Closed},
-                        //on dismiss or delete click close popup
+                            homeViewModel.addReminder(reminder = it)
+                            modifyPopupState.value = ModifyPopupState.Closed
+                            //make new work request to set off notification after x amount of time
+                            if (it.reminder_time != "") {
+                                //calculate time difference
+                                delayInSeconds.value = calculateSecondsBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
+                                //create work request
+                                setReminderRequest(context, delayInSeconds.value.toLong(), it.message, it.reminderId)
+                            }
+                            },
+                        //close popup on dismiss or delete click
                         onClickDismiss = {modifyPopupState.value = ModifyPopupState.Closed},
                         onClickDelete = {modifyPopupState.value = ModifyPopupState.Closed}
                     )
@@ -210,8 +276,7 @@ fun HomeScreen(
                         creator_id = selectedReminder.creator_id,
                         reminder_seen = selectedReminder.reminder_seen,
                         onClickSave = {
-                            homeViewModel.updReminder(
-                                reminder = it)
+                            homeViewModel.updReminder(reminder = it)
                             modifyPopupState.value = ModifyPopupState.Closed},
                         //on dismiss click close popup
                         onClickDismiss = {modifyPopupState.value = ModifyPopupState.Closed},
@@ -224,4 +289,28 @@ fun HomeScreen(
             }
         }
     }
+}
+
+//function for creating new work request
+private fun setReminderRequest(context: Context, seconds: Long, message: String, notificationId: Long?) {
+    val workManager = WorkManager.getInstance(context)
+    //convert long? -> int
+    var notificationIdInt = 0
+    notificationId?.let {
+        notificationIdInt = notificationId.toInt()
+    }
+    //initialize input data
+    val data: Data = Data.Builder()
+        .putInt("notificationId", notificationIdInt)
+        .putString("message", message)
+        .build()
+
+    //create request with initial delay and input data
+    val reminderRequest = OneTimeWorkRequestBuilder<ReminderWorker>()
+        .setInitialDelay(seconds, TimeUnit.SECONDS)
+        .setInputData(data)
+        .build()
+
+    //enqueue request
+    workManager.enqueue(reminderRequest)
 }

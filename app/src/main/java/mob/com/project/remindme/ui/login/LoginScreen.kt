@@ -1,19 +1,15 @@
 package mob.com.project.remindme.ui.login
 
-import android.content.Context
-import android.graphics.ColorFilter
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -29,9 +25,8 @@ fun LoginScreen(
 ) {
     val username = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
-    val correct_username = stringResource(id = R.string.username)
-    val correct_password = stringResource(id = R.string.password)
-
+    val correctUsername = stringResource(id = R.string.username)
+    val correctPassword = stringResource(id = R.string.password)
 
     Column (modifier = modifier.padding(20.dp),
         verticalArrangement = Arrangement.Center,
@@ -44,7 +39,6 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .size(64.dp)
         )
-
 
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -68,7 +62,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(30.dp))
 
         Button(onClick = {
-            if (username.value == correct_username && password.value == correct_password) {
+            if (username.value == correctUsername && password.value == correctPassword) {
                 navHostController.navigate(Destination.Home.route)
             }},
             modifier = Modifier

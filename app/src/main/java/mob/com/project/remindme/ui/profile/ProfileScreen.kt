@@ -2,7 +2,6 @@ package mob.com.project.remindme.ui.profile
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
@@ -17,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import mob.com.project.remindme.R
 import mob.com.project.remindme.navigation.BottomNavBar
-import mob.com.project.remindme.ui.theme.GreyLight
 import mob.com.project.remindme.ui.theme.PurpleDefault
 import mob.com.project.remindme.ui.theme.RemindMeTheme
 

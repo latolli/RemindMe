@@ -12,8 +12,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import mob.com.project.remindme.ui.theme.GreyDark
-import mob.com.project.remindme.ui.theme.OrangeLight
-import mob.com.project.remindme.ui.theme.Purple40
 import mob.com.project.remindme.ui.theme.PurpleDefault
 
 
