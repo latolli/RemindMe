@@ -21,7 +21,7 @@ class ReminderWorker(
                 channelId = "reminderChannel",
                 notificationId = notificationId,
                 title = message,
-                content = "Reminder $notificationId"
+                content = "Notification ID: $notificationId"
             )
         }
         else {
@@ -30,7 +30,7 @@ class ReminderWorker(
                 channelId = "reminderChannel",
                 notificationId = notificationId,
                 title = "Reminder $notificationId",
-                content = "Reminder $notificationId"
+                content = "Notification ID: $notificationId"
             )
         }
 

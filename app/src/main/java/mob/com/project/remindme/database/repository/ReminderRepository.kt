@@ -12,6 +12,8 @@ class ReminderRepository (
 
     fun findOne(reminderId: Long?): Flow<ReminderEntity> = reminderDao.findOne(reminderId = reminderId)
 
+    fun findOneByTime(creation_time: String): Flow<ReminderEntity> = reminderDao.findOneByTime(creation_time = creation_time)
+
     suspend fun insert(reminder: ReminderEntity) = reminderDao.insert(reminder = reminder)
 
     suspend fun update(reminder: ReminderEntity) = reminderDao.update(reminder = reminder)

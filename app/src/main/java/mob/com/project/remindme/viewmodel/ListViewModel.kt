@@ -12,7 +12,8 @@ import javax.inject.Inject
 
 interface HomeViewModelAbstract {
     val reminderListF: Flow<List<ReminderEntity>>
-    fun findReminder(reminderId: Long?): Flow<ReminderEntity>
+    fun findReminderId(reminderId: Long?): Flow<ReminderEntity>
+    fun findReminderTime(creation_time: String): Flow<ReminderEntity>
     fun addReminder(reminder: ReminderEntity)
     fun delReminder(reminder: ReminderEntity)
     fun updReminder(reminder: ReminderEntity)
@@ -24,7 +25,8 @@ class ListViewModel @Inject constructor(
 ): ViewModel(), HomeViewModelAbstract {
 
     override val reminderListF: Flow<List<ReminderEntity>> = reminderRepository.getAll()
-    override fun findReminder(reminderId: Long?): Flow<ReminderEntity> = reminderRepository.findOne(reminderId = reminderId)
+    override fun findReminderId(reminderId: Long?): Flow<ReminderEntity> = reminderRepository.findOne(reminderId = reminderId)
+    override fun findReminderTime(creation_time: String): Flow<ReminderEntity> = reminderRepository.findOneByTime(creation_time = creation_time)
 
     //initialize coroutine scope for add, del and update methods
     private val coroutineScope = CoroutineScope(Dispatchers.IO)

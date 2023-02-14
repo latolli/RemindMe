@@ -3,7 +3,7 @@ package mob.com.project.remindme.utils
 import java.time.LocalDateTime
 
 //very advanced method to calculate time between two dates
-fun calculateSecondsBetween(startTime: LocalDateTime, endTime: LocalDateTime): Int {
+fun calculateTimeBetween(startTime: LocalDateTime, endTime: LocalDateTime): Int {
     var daysInStart = startTime.year * 365 + startTime.dayOfMonth
     if (startTime.monthValue <= 2) {daysInStart+=31}
     if (startTime.monthValue <= 3) {daysInStart+=28}
@@ -30,8 +30,8 @@ fun calculateSecondsBetween(startTime: LocalDateTime, endTime: LocalDateTime): I
     if (endTime.monthValue <= 11) {daysInEnd+=31}
     if (endTime.monthValue <= 12) {daysInEnd+=30}
 
-    val secondsEnd = daysInEnd*24*60*60 + endTime.hour*60*60 + endTime.minute*60
-    val secondsStart = daysInStart*24*60*60 + startTime.hour*60*60 + startTime.minute*60
+    val totalEnd = daysInEnd*24*60 + endTime.hour*60 + endTime.minute
+    val totalStart = daysInStart*24*60 + startTime.hour*60 + startTime.minute
 
-    return secondsEnd - secondsStart
+    return totalEnd - totalStart
 }

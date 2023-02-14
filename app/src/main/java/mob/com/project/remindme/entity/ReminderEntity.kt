@@ -11,11 +11,7 @@ data class ReminderEntity(
     val location_y: Float,
     val reminder_time: String,
     val creation_time: String,
-    val creator_id: Long? = null,
-    val reminder_seen: Boolean
+    val creator_id: Long = 0,
+    var reminder_seen: Boolean,
+    val notificationId: Int
 )
-//data class ReminderEntity(
-//    @PrimaryKey(autoGenerate = true) var reminderId: Long? = null,
-//    val title: String,
-//    val time: String
-//)

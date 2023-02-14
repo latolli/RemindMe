@@ -17,6 +17,9 @@ interface ReminderDao {
     @Query("SELECT * FROM reminder WHERE reminderId=:reminderId")
     fun findOne(reminderId: Long?): Flow<ReminderEntity>
 
+    @Query("SELECT * FROM reminder WHERE creation_time=:creation_time")
+    fun findOneByTime(creation_time: String): Flow<ReminderEntity>
+
     @Insert
     suspend fun insert(reminder: ReminderEntity)
 

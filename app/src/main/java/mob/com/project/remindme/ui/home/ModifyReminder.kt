@@ -40,13 +40,15 @@ fun ModifyReminder(
     location_y: String = "0.0",
     reminder_time: String = "",
     creation_time: String = "",
-    creator_id: Long? = null,
+    creator_id: Long = 0,
     reminder_seen: Boolean = false,
+    notificationId: Int = 0,
     isNew: Boolean = false,
     onClickSave: (ReminderEntity) -> Unit,
     onClickDismiss: () -> Unit,
     onClickDelete: () -> Unit,
 ) {
+    Log.d("notification", "Inside modify: $notificationId")
     //reminder data states
     val messageState = rememberSaveable { mutableStateOf(message) }
     val locationXState = rememberSaveable { mutableStateOf(location_x) }
@@ -64,6 +66,7 @@ fun ModifyReminder(
         selection = CalendarSelection.Date {date ->
             //if new date was selected, update state
             calendarStringState.value = "$date"
+            //Log.d("asd", "fuck $date")
     })
     ClockDialog(state = clockState,
         config = ClockConfig(
@@ -185,7 +188,8 @@ fun ModifyReminder(
                         .clickable {
                             //if new time was picked, replace reminder time
                             if (calendarStringState.value != "" && clockStringState.value != "") {
-                                reminderTimeState.value = "${calendarStringState.value}T${clockStringState.value}"
+                                reminderTimeState.value =
+                                    "${calendarStringState.value}T${clockStringState.value}"
                             }
 
                             onClickSave(
@@ -197,7 +201,8 @@ fun ModifyReminder(
                                     reminder_time = reminderTimeState.value,
                                     creation_time = creation_time,
                                     creator_id = creator_id,
-                                    reminder_seen = reminder_seen
+                                    reminder_seen = reminder_seen,
+                                    notificationId = notificationId
                                 )
                             )
                         }

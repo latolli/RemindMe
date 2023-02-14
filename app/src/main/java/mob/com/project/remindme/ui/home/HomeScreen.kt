@@ -32,8 +32,12 @@ import androidx.compose.material.Checkbox
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import mob.com.project.remindme.utils.calculateSecondsBetween
+import kotlinx.coroutines.flow.collect
+import mob.com.project.remindme.utils.calculateTimeBetween
 import mob.com.project.remindme.work.ReminderWorker
+import mob.com.project.remindme.work.cancelReminderRequest
+import mob.com.project.remindme.work.replaceReminderRequest
+import mob.com.project.remindme.work.setReminderRequest
 import java.util.concurrent.TimeUnit
 
 private enum class ModifyPopupState {
@@ -53,8 +57,10 @@ fun HomeScreen(
     }
 
     //initialize variables for delay between dates and context
-    val delayInSeconds = remember{ mutableStateOf(0)}
+    val reminderDelay = remember{ mutableStateOf(0)}
     val context = LocalContext.current
+    //keep track of what next id should be
+    var lastNotificationId = 0
     //boolean for checking if we should show all reminders or not
     val showAllState = remember{ mutableStateOf(false)}
     val itemListState = homeViewModel.reminderListF.collectAsState(initial = listOf())
@@ -67,7 +73,8 @@ fun HomeScreen(
                                         reminder_time = "",
                                         creation_time = "",
                                         creator_id = 0,
-                                        reminder_seen = false
+                                        reminder_seen = false,
+                                        notificationId = 0
         )
 
     Scaffold(
@@ -99,6 +106,8 @@ fun HomeScreen(
             ) {
                 items(itemListState.value.size){ i ->
                     val item = itemListState.value[i]
+                    lastNotificationId = item.notificationId
+                    Log.d("notification", "Updated notification ID: $lastNotificationId")
                     //on first iteration show top row
                     if (i == 0) {
                         Row(modifier = Modifier
@@ -117,8 +126,17 @@ fun HomeScreen(
                             )
                         }
                     }
+                    //if reminder is already occurred update reminderSeen value
+                    //first check that reminder time is not empty
+                    if (item.reminder_time != "") {
+                        if (calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(item.reminder_time)) < 0) {
+                            item.reminder_seen = true
+                            homeViewModel.updReminder(reminder = item)
+                        }
+                    }
+
                     //display reminder if show all is selected or reminder has occurred or reminder doesn't have time/location
-                    if (showAllState.value || (item.reminder_time == "" && item.location_x == 0.0f && item.location_y == 0.0f)) {
+                    if (showAllState.value || (item.reminder_time == "" && item.location_x == 0.0f && item.location_y == 0.0f) || item.reminder_seen) {
                         //draw spacer
                         Box(modifier = Modifier
                             .fillMaxWidth()) {
@@ -150,7 +168,7 @@ fun HomeScreen(
                                         text = "Message: ", color = PurpleDefault,
                                     )
                                     Text(
-                                        text = "${item.message}", color = Color.Black
+                                        text = "${item.message}", color = Color.Black,
                                     )
                                 }
                                 //if reminder time is set, display it
@@ -208,29 +226,6 @@ fun HomeScreen(
                                         )
                                     }
                                 }
-                                //TEMP ROW FOR TESTING NOTIFICATIONS
-                                //Row(
-                                //    Modifier
-                                //        .fillMaxWidth()
-                                //        .padding(horizontal = 12.dp, vertical = 10.dp),
-                                //    horizontalArrangement = Arrangement.Start
-                                //) {
-                                //    Button(onClick = {
-                                //        if (item.reminder_time != ""){
-                                //            delayInSeconds.value = calculateSecondsBetween(LocalDateTime.now(), LocalDateTime.parse(item.reminder_time))
-                                //            Log.d("delay in seconds", "${delayInSeconds.value}")
-                                //        }
-                                //        else {
-                                //            Log.d("delay in seconds", "Reminder time = NULL")
-                                //        }
-//
-                                //        item.reminderId?.let {
-                                //            //setReminderRequest(context, 0, 0, 30, item.message, it.toInt())
-                                //        }
-                                //    }) {
-                                //        Text(text = "NOTIFICATION")
-                                //    }
-                                //}
                             }
                         }
                     }
@@ -240,20 +235,23 @@ fun HomeScreen(
             when(modifyPopupState.value) {
                 //if active (this means we are adding a new reminder)
                 ModifyPopupState.Active -> {
+                    Log.d("notification", "Creating new reminder: $lastNotificationId")
                     ModifyReminder(
                         creation_time = LocalDateTime.now().toString(),
+                        notificationId = lastNotificationId+1,
                         isNew = true,
                         //on save click close popup and add new reminder
                         onClickSave = {
                             homeViewModel.addReminder(reminder = it)
-                            modifyPopupState.value = ModifyPopupState.Closed
                             //make new work request to set off notification after x amount of time
                             if (it.reminder_time != "") {
                                 //calculate time difference
-                                delayInSeconds.value = calculateSecondsBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
-                                //create work request
-                                setReminderRequest(context, delayInSeconds.value.toLong(), it.message, it.reminderId)
+                                reminderDelay.value = calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
+                                //create work request, notification id = current size of item list + 1
+                                setReminderRequest(context, reminderDelay.value.toLong(), it.message, lastNotificationId+1)
                             }
+                            //close popup
+                            modifyPopupState.value = ModifyPopupState.Closed
                             },
                         //close popup on dismiss or delete click
                         onClickDismiss = {modifyPopupState.value = ModifyPopupState.Closed},
@@ -275,42 +273,33 @@ fun HomeScreen(
                         creation_time = selectedReminder.creation_time,
                         creator_id = selectedReminder.creator_id,
                         reminder_seen = selectedReminder.reminder_seen,
+                        notificationId = selectedReminder.notificationId,
                         onClickSave = {
+                            //replace current work request with new one
+                            if (it.reminder_time != "") {
+                                //calculate time difference
+                                reminderDelay.value = calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
+                                //create work request, notification id = current size of item list + 1
+                                replaceReminderRequest(context, reminderDelay.value.toLong(), it.message, it.notificationId)
+                            }
+                            //update reminder in database
                             homeViewModel.updReminder(reminder = it)
                             modifyPopupState.value = ModifyPopupState.Closed},
                         //on dismiss click close popup
                         onClickDismiss = {modifyPopupState.value = ModifyPopupState.Closed},
                         //on delete click delete item
                         onClickDelete = {
+                            //cancel work request made by this reminder
+                            if (selectedReminder.reminder_time != "") {
+                                cancelReminderRequest(context, selectedReminder.notificationId)
+                            }
+                            //delete reminder from database
                             homeViewModel.delReminder(reminder = selectedReminder)
-                            modifyPopupState.value = ModifyPopupState.Closed}
+                            modifyPopupState.value = ModifyPopupState.Closed
+                            }
                     )
                 }
             }
         }
     }
-}
-
-//function for creating new work request
-private fun setReminderRequest(context: Context, seconds: Long, message: String, notificationId: Long?) {
-    val workManager = WorkManager.getInstance(context)
-    //convert long? -> int
-    var notificationIdInt = 0
-    notificationId?.let {
-        notificationIdInt = notificationId.toInt()
-    }
-    //initialize input data
-    val data: Data = Data.Builder()
-        .putInt("notificationId", notificationIdInt)
-        .putString("message", message)
-        .build()
-
-    //create request with initial delay and input data
-    val reminderRequest = OneTimeWorkRequestBuilder<ReminderWorker>()
-        .setInitialDelay(seconds, TimeUnit.SECONDS)
-        .setInputData(data)
-        .build()
-
-    //enqueue request
-    workManager.enqueue(reminderRequest)
 }
