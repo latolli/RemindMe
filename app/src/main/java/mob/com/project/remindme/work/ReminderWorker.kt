@@ -1,7 +1,6 @@
 package mob.com.project.remindme.work
 
 import android.content.Context
-import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import mob.com.project.remindme.notification.showNotification

@@ -1,6 +1,5 @@
 package mob.com.project.remindme.ui.home
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,12 +47,12 @@ fun ModifyReminder(
     onClickDismiss: () -> Unit,
     onClickDelete: () -> Unit,
 ) {
-    Log.d("notification", "Inside modify: $notificationId")
     //reminder data states
     val messageState = rememberSaveable { mutableStateOf(message) }
     val locationXState = rememberSaveable { mutableStateOf(location_x) }
     val locationYState = rememberSaveable { mutableStateOf(location_y) }
     val reminderTimeState = rememberSaveable { mutableStateOf(reminder_time) }
+    val reminderSeenState = rememberSaveable { mutableStateOf(reminder_seen) }
 
     //states for calendar and clock picker
     val calendarState = rememberSheetState()
@@ -66,7 +65,6 @@ fun ModifyReminder(
         selection = CalendarSelection.Date {date ->
             //if new date was selected, update state
             calendarStringState.value = "$date"
-            //Log.d("asd", "fuck $date")
     })
     ClockDialog(state = clockState,
         config = ClockConfig(
@@ -186,10 +184,10 @@ fun ModifyReminder(
                     modifier = Modifier
                         .size(24.dp)
                         .clickable {
-                            //if new time was picked, replace reminder time
+                            //if new time was picked, replace reminder time and set reminder seen to false
                             if (calendarStringState.value != "" && clockStringState.value != "") {
-                                reminderTimeState.value =
-                                    "${calendarStringState.value}T${clockStringState.value}"
+                                reminderTimeState.value = "${calendarStringState.value}T${clockStringState.value}"
+                                reminderSeenState.value = false
                             }
 
                             onClickSave(
@@ -201,7 +199,7 @@ fun ModifyReminder(
                                     reminder_time = reminderTimeState.value,
                                     creation_time = creation_time,
                                     creator_id = creator_id,
-                                    reminder_seen = reminder_seen,
+                                    reminder_seen = reminderSeenState.value,
                                     notificationId = notificationId
                                 )
                             )

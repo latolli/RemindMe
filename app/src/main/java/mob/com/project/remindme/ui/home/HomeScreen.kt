@@ -1,7 +1,5 @@
 package mob.com.project.remindme.ui.home
 
-import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,16 +27,10 @@ import mob.com.project.remindme.ui.theme.*
 import mob.com.project.remindme.viewmodel.ListViewModel
 import java.time.LocalDateTime
 import androidx.compose.material.Checkbox
-import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import kotlinx.coroutines.flow.collect
 import mob.com.project.remindme.utils.calculateTimeBetween
-import mob.com.project.remindme.work.ReminderWorker
 import mob.com.project.remindme.work.cancelReminderRequest
 import mob.com.project.remindme.work.replaceReminderRequest
 import mob.com.project.remindme.work.setReminderRequest
-import java.util.concurrent.TimeUnit
 
 private enum class ModifyPopupState {
     Active, Closed, Modify
@@ -106,8 +98,7 @@ fun HomeScreen(
             ) {
                 items(itemListState.value.size){ i ->
                     val item = itemListState.value[i]
-                    lastNotificationId = item.notificationId
-                    Log.d("notification", "Updated notification ID: $lastNotificationId")
+                    lastNotificationId = maxOf(item.notificationId, lastNotificationId)
                     //on first iteration show top row
                     if (i == 0) {
                         Row(modifier = Modifier
@@ -129,14 +120,18 @@ fun HomeScreen(
                     //if reminder is already occurred update reminderSeen value
                     //first check that reminder time is not empty
                     if (item.reminder_time != "") {
-                        if (calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(item.reminder_time)) < 0) {
+                        if (calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(item.reminder_time)) <= 0) {
                             item.reminder_seen = true
                             homeViewModel.updReminder(reminder = item)
                         }
                     }
-
-                    //display reminder if show all is selected or reminder has occurred or reminder doesn't have time/location
-                    if (showAllState.value || (item.reminder_time == "" && item.location_x == 0.0f && item.location_y == 0.0f) || item.reminder_seen) {
+                    //if reminder has no time / location constraints, update reminderSeen value
+                    if (item.reminder_time == "" && item.location_x == 0.0f && item.location_y == 0.0f){
+                        item.reminder_seen = true
+                        homeViewModel.updReminder(reminder = item)
+                    }
+                    //display reminder if show all is selected or reminderSeen is true
+                    if (showAllState.value || item.reminder_seen) {
                         //draw spacer
                         Box(modifier = Modifier
                             .fillMaxWidth()) {
@@ -235,7 +230,6 @@ fun HomeScreen(
             when(modifyPopupState.value) {
                 //if active (this means we are adding a new reminder)
                 ModifyPopupState.Active -> {
-                    Log.d("notification", "Creating new reminder: $lastNotificationId")
                     ModifyReminder(
                         creation_time = LocalDateTime.now().toString(),
                         notificationId = lastNotificationId+1,
@@ -250,6 +244,8 @@ fun HomeScreen(
                                 //create work request, notification id = current size of item list + 1
                                 setReminderRequest(context, reminderDelay.value.toLong(), it.message, lastNotificationId+1)
                             }
+                            //update lastNotificationId value
+                            lastNotificationId = it.notificationId
                             //close popup
                             modifyPopupState.value = ModifyPopupState.Closed
                             },
@@ -263,7 +259,6 @@ fun HomeScreen(
                 //if on modify state
                 ModifyPopupState.Modify -> {
                     ModifyReminder(
-                        //on save click close popup and update
                         //pass current values
                         id = selectedReminder.reminderId,
                         message = selectedReminder.message,
@@ -274,6 +269,7 @@ fun HomeScreen(
                         creator_id = selectedReminder.creator_id,
                         reminder_seen = selectedReminder.reminder_seen,
                         notificationId = selectedReminder.notificationId,
+                        //on save click close popup and update reminder
                         onClickSave = {
                             //replace current work request with new one
                             if (it.reminder_time != "") {
