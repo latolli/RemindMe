@@ -30,8 +30,8 @@ fun calculateTimeBetween(startTime: LocalDateTime, endTime: LocalDateTime): Int 
     if (endTime.monthValue <= 11) {daysInEnd+=31}
     if (endTime.monthValue <= 12) {daysInEnd+=30}
 
-    val totalEnd = daysInEnd*24*60 + endTime.hour*60 + endTime.minute
-    val totalStart = daysInStart*24*60 + startTime.hour*60 + startTime.minute
+    val totalEnd = daysInEnd*24*60*60 + endTime.hour*60*60 + endTime.minute*60 + endTime.second
+    val totalStart = daysInStart*24*60*60 + startTime.hour*60*60 + startTime.minute*60 + endTime.second
 
     return totalEnd - totalStart
 }

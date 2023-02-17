@@ -7,7 +7,7 @@ import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 
 //function for creating new work request
-fun setReminderRequest(context: Context, minutes: Long, message: String, notificationId: Int) {
+fun setReminderRequest(context: Context, delay: Long, message: String, notificationId: Int) {
     val workManager = WorkManager.getInstance(context)
 
     //initialize input data
@@ -18,7 +18,7 @@ fun setReminderRequest(context: Context, minutes: Long, message: String, notific
 
     //create request with initial delay and input data and unique tag
     val reminderRequest = OneTimeWorkRequestBuilder<ReminderWorker>()
-        .setInitialDelay(minutes, TimeUnit.MINUTES)
+        .setInitialDelay(delay, TimeUnit.SECONDS)
         .setInputData(data)
         .addTag("$notificationId")
         .build()
@@ -35,9 +35,9 @@ fun cancelReminderRequest(context: Context, tag: Int) {
 }
 
 //function for replacing existing work request
-fun replaceReminderRequest(context: Context, minutes: Long, message: String, notificationId: Int) {
+fun replaceReminderRequest(context: Context, delay: Long, message: String, notificationId: Int) {
     //cancel old requests
     cancelReminderRequest(context, notificationId)
     //create new request with new values
-    setReminderRequest(context, minutes, message, notificationId)
+    setReminderRequest(context, delay, message, notificationId)
 }
