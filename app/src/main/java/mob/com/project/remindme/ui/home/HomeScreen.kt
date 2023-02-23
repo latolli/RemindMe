@@ -271,6 +271,8 @@ fun HomeScreen(
                         notificationId = selectedReminder.notificationId,
                         //on save click close popup and update reminder
                         onClickSave = {
+                            //update reminder in database
+                            homeViewModel.updReminder(reminder = it)
                             //replace current work request with new one
                             if (it.reminder_time != "") {
                                 //calculate time difference
@@ -278,8 +280,6 @@ fun HomeScreen(
                                 //create work request, notification id = current size of item list + 1
                                 replaceReminderRequest(context, reminderDelay.value.toLong(), it.message, it.notificationId)
                             }
-                            //update reminder in database
-                            homeViewModel.updReminder(reminder = it)
                             modifyPopupState.value = ModifyPopupState.Closed},
                         //on dismiss click close popup
                         onClickDismiss = {modifyPopupState.value = ModifyPopupState.Closed},
