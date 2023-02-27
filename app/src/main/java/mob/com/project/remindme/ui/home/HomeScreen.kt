@@ -297,7 +297,7 @@ fun HomeScreen(
                             }
                     )
                 }
-            }
+            } //fuck
         }
     }
 }
