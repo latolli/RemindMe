@@ -262,8 +262,8 @@ fun HomeScreen(
                         //pass current values
                         id = selectedReminder.reminderId,
                         message = selectedReminder.message,
-                        location_x = selectedReminder.location_x.toString(),
-                        location_y = selectedReminder.location_y.toString(),
+                        location_x = selectedReminder.location_x,
+                        location_y = selectedReminder.location_y,
                         reminder_time = selectedReminder.reminder_time,
                         creation_time = selectedReminder.creation_time,
                         creator_id = selectedReminder.creator_id,
@@ -272,13 +272,15 @@ fun HomeScreen(
                         //on save click close popup and update reminder
                         onClickSave = {
                             //update reminder in database
-                            homeViewModel.updReminder(reminder = it)
+                            homeViewModel.updReminder(reminder = it) //asd
                             //replace current work request with new one
                             if (it.reminder_time != "") {
                                 //calculate time difference
                                 reminderDelay.value = calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
-                                //create work request, notification id = current size of item list + 1
-                                replaceReminderRequest(context, reminderDelay.value.toLong(), it.message, it.notificationId)
+                                //replace old work request if new reminder time was chosen
+                                if (reminderDelay.value > 0) {
+                                    replaceReminderRequest(context, reminderDelay.value.toLong(), it.message, it.notificationId)
+                                }
                             }
                             modifyPopupState.value = ModifyPopupState.Closed},
                         //on dismiss click close popup
