@@ -297,7 +297,7 @@ fun HomeScreen(
                             }
                     )
                 }
-            } //fuck
+            } //fuckgfasd mgadsfnbuhjgujwahesbrn gjnhd asrkfn jmkh,ö.
         }
     }
 }
