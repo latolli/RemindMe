@@ -1,10 +1,12 @@
 package mob.com.project.remindme.ui.home
 
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,6 +29,8 @@ import mob.com.project.remindme.ui.theme.*
 import mob.com.project.remindme.viewmodel.ListViewModel
 import java.time.LocalDateTime
 import androidx.compose.material.Checkbox
+import androidx.core.content.ContextCompat.startActivity
+import mob.com.project.remindme.location.LocationService
 import mob.com.project.remindme.utils.calculateTimeBetween
 import mob.com.project.remindme.work.cancelReminderRequest
 import mob.com.project.remindme.work.replaceReminderRequest
@@ -49,12 +53,13 @@ fun HomeScreen(
     }
 
     //initialize variables for delay between dates and context
-    val reminderDelay = remember{ mutableStateOf(0)}
+    //val reminderDelay = remember{ mutableStateOf(0)}
     val context = LocalContext.current
     //keep track of what next id should be
     var lastNotificationId = 0
-    //boolean for checking if we should show all reminders or not
+    //boolean for checking if we should show all reminders or not and if we should track location
     val showAllState = remember{ mutableStateOf(false)}
+    val trackLocationState = remember{ mutableStateOf(false)}
     val itemListState = homeViewModel.reminderListF.collectAsState(initial = listOf())
 
     //initialize variable for reminder entity to keep track of selected reminder
@@ -115,6 +120,31 @@ fun HomeScreen(
                                 checked = showAllState.value,
                                 onCheckedChange = { showAllState.value = it }
                             )
+                            //button for enabling / disabling location tracking
+                            androidx.compose.material.Button(
+                                onClick = {
+                                    if(trackLocationState.value) {
+                                        Intent(context, LocationService::class.java).apply {
+                                            action = LocationService.STOP_TRACK
+                                            context.startService(this)
+                                        }
+                                        trackLocationState.value = false
+                                    }
+                                    else {
+                                        Intent(context, LocationService::class.java).apply {
+                                            action = LocationService.START_TRACK
+                                            context.startService(this)
+                                        }
+                                        trackLocationState.value = true
+                                    }
+                                },
+                                modifier = Modifier
+                                    .height(50.dp)
+                                    .padding(horizontal = 20.dp),
+                                shape = RoundedCornerShape(corner = CornerSize(50.dp))
+                            ) {
+                                androidx.compose.material.Text(text = "Location")
+                            }
                         }
                     }
                     //if reminder is already occurred update reminderSeen value
@@ -216,7 +246,7 @@ fun HomeScreen(
                                             modifier = Modifier.size(24.dp)
                                         )
                                         Text(
-                                            text = "  ${item.location_x} , ${item.location_y}",
+                                            text = "  ${item.location_x.toString().take(6)} , ${item.location_y.toString().take(6)}",
                                             color = Color.Black
                                         )
                                     }
@@ -237,12 +267,12 @@ fun HomeScreen(
                         //on save click close popup and add new reminder
                         onClickSave = {
                             homeViewModel.addReminder(reminder = it)
-                            //make new work request to set off notification after x amount of time
-                            if (it.reminder_time != "") {
+                            //make new work request, if we have some time or location information
+                            if (it.reminder_time != "" || it.location_x != 0.0f || it.location_y != 0.0f) {
                                 //calculate time difference
-                                reminderDelay.value = calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
+                                //reminderDelay.value = calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
                                 //create work request, notification id = current size of item list + 1
-                                setReminderRequest(context, reminderDelay.value.toLong(), it.message, lastNotificationId+1)
+                                setReminderRequest(context, it.message, lastNotificationId+1, it.reminder_time)
                             }
                             //update lastNotificationId value
                             lastNotificationId = it.notificationId
@@ -273,14 +303,13 @@ fun HomeScreen(
                         onClickSave = {
                             //update reminder in database
                             homeViewModel.updReminder(reminder = it) //asd
-                            //replace current work request with new one
-                            if (it.reminder_time != "") {
+                            //replace current work request with new one, if we have some time or location information
+                            if (it.reminder_time != "" || it.location_x != 0.0f || it.location_y != 0.0f) {
                                 //calculate time difference
-                                reminderDelay.value = calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
-                                //replace old work request if new reminder time was chosen
-                                if (reminderDelay.value > 0) {
-                                    replaceReminderRequest(context, reminderDelay.value.toLong(), it.message, it.notificationId)
-                                }
+                                //reminderDelay.value = calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
+                                //replace old work request
+                                replaceReminderRequest(context, it.message, it.notificationId, it.reminder_time)
+
                             }
                             modifyPopupState.value = ModifyPopupState.Closed},
                         //on dismiss click close popup
@@ -297,7 +326,7 @@ fun HomeScreen(
                             }
                     )
                 }
-            } //fuckgfasd mgadsfnbuhjgujwahesbrn gjnhd asrkfn jmkh,ö.
+            }
         }
     }
 }

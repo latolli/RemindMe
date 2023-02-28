@@ -1,11 +1,13 @@
 package mob.com.project.remindme.notification
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import mob.com.project.remindme.R
 
 //function for showing notification
+@SuppressLint("MissingPermission")
 fun showNotification(
     context: Context,
     channelId: String,

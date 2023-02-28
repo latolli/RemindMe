@@ -1,5 +1,6 @@
 package mob.com.project.remindme
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,7 +17,6 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import mob.com.project.remindme.ui.home.HomeScreen
 import mob.com.project.remindme.ui.login.LoginScreen
-import mob.com.project.remindme.ui.map.ReminderLocation
 import mob.com.project.remindme.ui.profile.ProfileScreen
 import mob.com.project.remindme.ui.theme.RemindMeTheme
 import mob.com.project.remindme.ui.theme.WhiteSurface
@@ -25,7 +26,6 @@ sealed class Destination(val route: String) {
     object Home: Destination("home")
     object Login: Destination("login")
     object Profile: Destination("profile")
-    object Map: Destination("map")
 }
 
 @AndroidEntryPoint
@@ -33,6 +33,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val listViewModel: ListViewModel by viewModels()
+        //get location permissions
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+            ),
+            0
+        )
         setContent {
             RemindMeTheme(darkTheme = false) {
                 // A surface container using the 'background' color from the theme
@@ -61,8 +70,5 @@ fun NavigationAppHost(navController: NavHostController, viewModel: ListViewModel
         composable(Destination.Profile.route) {
             ProfileScreen(navHostController = navController, modifier = Modifier)
         }
-        //composable(Destination.Map.route) {
-        //    ReminderLocation(navHostController = navController)
-        //}
     }
 }

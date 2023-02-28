@@ -171,24 +171,8 @@ fun ModifyReminder(
                         androidx.compose.material.Text(text = "Pick location")
                     }
                     Spacer(modifier = Modifier.height(20.dp))
-                    Text(text = "Lat: ${latState.value}, Lng: ${lngState.value}", color = Color.Black)
+                    Text(text = "Lat: ${latState.value.toString().take(6)}, Lng: ${lngState.value.toString().take(6)}", color = Color.Black)
                     Spacer(modifier = Modifier.height(30.dp))
-                    ////field for modifying location x
-                    //OutlinedTextField(value = locationXState.value,
-                    //    onValueChange = { text -> locationXState.value = text},
-                    //    label = { androidx.compose.material.Text(text = "Longitude") },
-                    //    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    //    shape = RoundedCornerShape(corner = CornerSize(50.dp))
-                    //)
-                    //Spacer(modifier = Modifier.height(20.dp))
-                    ////field for modifying location y
-                    //OutlinedTextField(value = locationYState.value,
-                    //    onValueChange = { text -> locationYState.value = text},
-                    //    label = { androidx.compose.material.Text(text = "Latitude") },
-                    //    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    //    shape = RoundedCornerShape(corner = CornerSize(50.dp))
-                    //)
-                    //
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))

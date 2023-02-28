@@ -50,14 +50,24 @@ fun ReminderLocation(
                     val map = mapView.awaitMap()
                     map.uiSettings.isZoomControlsEnabled = true
                     map.uiSettings.isScrollGesturesEnabled = true
-                    //if map was just opened, move camera to oulu
+                    //if map was just opened, move camera to oulu or the location of reminder
                     if (startState.value) {
-                        map.moveCamera(
-                            CameraUpdateFactory.newLatLngZoom(
-                                LatLng(65.06, 25.47),
-                                10f
+                        if (latState.value != 0.0f) {
+                            map.moveCamera(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    LatLng(latState.value.toDouble(), lngState.value.toDouble()),
+                                    10f
+                                )
                             )
-                        )
+                        }
+                        else {
+                            map.moveCamera(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    LatLng(65.06, 25.47),
+                                    10f
+                                )
+                            )
+                        }
                         startState.value = false
                     }
 
@@ -95,7 +105,7 @@ fun ReminderLocation(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Lat: ${latState.value}, Lng: ${lngState.value}",
+                text = "Lat: ${latState.value.toString().take(6)}, Lng: ${lngState.value.toString().take(6)}",
                 color = PurpleDefault,
                 style = TextStyle(fontSize = 22.sp, background = Color.White)
             )
