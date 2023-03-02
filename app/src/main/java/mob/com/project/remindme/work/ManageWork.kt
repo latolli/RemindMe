@@ -4,10 +4,9 @@ import android.content.Context
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import java.util.concurrent.TimeUnit
 
 //function for creating new work request
-fun setReminderRequest(context: Context, message: String, notificationId: Int, reminderTime: String) {
+fun setReminderRequest(context: Context, message: String, notificationId: Int, reminderTime: String, lat: Float, lng: Float) {
     val workManager = WorkManager.getInstance(context)
 
     //initialize input data
@@ -15,6 +14,8 @@ fun setReminderRequest(context: Context, message: String, notificationId: Int, r
         .putInt("notificationId", notificationId)
         .putString("message", message)
         .putString("reminderTime", reminderTime)
+        .putFloat("lat", lat)
+        .putFloat("lng", lng)
         .build()
 
     //create request with input data and unique tag
@@ -35,9 +36,9 @@ fun cancelReminderRequest(context: Context, tag: Int) {
 }
 
 //function for replacing existing work request
-fun replaceReminderRequest(context: Context, message: String, notificationId: Int, reminderTime: String) {
+fun replaceReminderRequest(context: Context, message: String, notificationId: Int, reminderTime: String, lat: Float, lng: Float) {
     //cancel old requests
     cancelReminderRequest(context, notificationId)
     //create new request with new values
-    setReminderRequest(context, message, notificationId, reminderTime)
+    setReminderRequest(context, message, notificationId, reminderTime, lat, lng)
 }

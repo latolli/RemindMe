@@ -1,6 +1,8 @@
 package mob.com.project.remindme.ui.home
 
-import android.content.Intent
+import android.annotation.SuppressLint
+import android.location.Location
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,9 +31,10 @@ import mob.com.project.remindme.ui.theme.*
 import mob.com.project.remindme.viewmodel.ListViewModel
 import java.time.LocalDateTime
 import androidx.compose.material.Checkbox
-import androidx.core.content.ContextCompat.startActivity
-import mob.com.project.remindme.location.LocationService
+import com.google.android.gms.location.LocationServices
+import mob.com.project.remindme.ui.map.ReminderLocation
 import mob.com.project.remindme.utils.calculateTimeBetween
+import mob.com.project.remindme.utils.euclideanDistance
 import mob.com.project.remindme.work.cancelReminderRequest
 import mob.com.project.remindme.work.replaceReminderRequest
 import mob.com.project.remindme.work.setReminderRequest
@@ -40,7 +43,12 @@ private enum class ModifyPopupState {
     Active, Closed, Modify
 }
 
+private enum class ModifyLocationState {
+    Active, Closed
+}
 
+
+@SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -51,15 +59,20 @@ fun HomeScreen(
     val modifyPopupState = rememberSaveable {
         mutableStateOf(ModifyPopupState.Closed)
     }
+    //state for changing virtual location
+    val modifyLocationState = rememberSaveable {
+        mutableStateOf(ModifyLocationState.Closed)
+    }
 
-    //initialize variables for delay between dates and context
-    //val reminderDelay = remember{ mutableStateOf(0)}
+    //initialize variables for context and work manager
     val context = LocalContext.current
+    var virtualUserLat = 0.0f
+    var virtualUserLng = 0.0f
     //keep track of what next id should be
     var lastNotificationId = 0
     //boolean for checking if we should show all reminders or not and if we should track location
     val showAllState = remember{ mutableStateOf(false)}
-    val trackLocationState = remember{ mutableStateOf(false)}
+    val showNearby = remember{ mutableStateOf(false)}
     val itemListState = homeViewModel.reminderListF.collectAsState(initial = listOf())
 
     //initialize variable for reminder entity to keep track of selected reminder
@@ -73,6 +86,16 @@ fun HomeScreen(
                                         reminder_seen = false,
                                         notificationId = 0
         )
+
+    //initialize location client and get initial user location
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    fusedLocationClient.lastLocation
+        .addOnSuccessListener { location : Location? ->
+            if (location != null) {
+                virtualUserLat = location.latitude.toFloat()
+                virtualUserLng = location.longitude.toFloat()
+            }
+        }
 
     Scaffold(
         bottomBar = { BottomNavBar(navController = navHostController)},
@@ -112,6 +135,24 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            //button for enabling / disabling location tracking
+                            androidx.compose.material.Button(
+                                onClick = {
+                                    modifyLocationState.value = ModifyLocationState.Active
+                                },
+                                modifier = Modifier
+                                    .height(50.dp),
+                                shape = RoundedCornerShape(corner = CornerSize(50.dp))
+                            ) {
+                                androidx.compose.material.Text(text = "Choose virtual location", style = TextStyle(fontSize = 18.sp))
+                            }
+                        }
+                        Row(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 20.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(text = "Show all",
                                 color = PurpleDefault,
                                 style = TextStyle(fontSize = 22.sp)
@@ -120,31 +161,14 @@ fun HomeScreen(
                                 checked = showAllState.value,
                                 onCheckedChange = { showAllState.value = it }
                             )
-                            //button for enabling / disabling location tracking
-                            androidx.compose.material.Button(
-                                onClick = {
-                                    if(trackLocationState.value) {
-                                        Intent(context, LocationService::class.java).apply {
-                                            action = LocationService.STOP_TRACK
-                                            context.startService(this)
-                                        }
-                                        trackLocationState.value = false
-                                    }
-                                    else {
-                                        Intent(context, LocationService::class.java).apply {
-                                            action = LocationService.START_TRACK
-                                            context.startService(this)
-                                        }
-                                        trackLocationState.value = true
-                                    }
-                                },
-                                modifier = Modifier
-                                    .height(50.dp)
-                                    .padding(horizontal = 20.dp),
-                                shape = RoundedCornerShape(corner = CornerSize(50.dp))
-                            ) {
-                                androidx.compose.material.Text(text = "Location")
-                            }
+                            Text(text = "Show nearby",
+                                color = PurpleDefault,
+                                style = TextStyle(fontSize = 22.sp)
+                            )
+                            Checkbox(
+                                checked = showNearby.value,
+                                onCheckedChange = { showNearby.value = it }
+                            )
                         }
                     }
                     //if reminder is already occurred update reminderSeen value
@@ -155,13 +179,20 @@ fun HomeScreen(
                             homeViewModel.updReminder(reminder = item)
                         }
                     }
+                    if (item.location_x != 0.0f && item.location_y != 0.0f) {
+                        if (euclideanDistance(item.location_x, item.location_y, virtualUserLat, virtualUserLng) <= 0.0005f) {
+                            item.reminder_seen = true
+                            homeViewModel.updReminder(reminder = item)
+                        }
+                    }
                     //if reminder has no time / location constraints, update reminderSeen value
                     if (item.reminder_time == "" && item.location_x == 0.0f && item.location_y == 0.0f){
                         item.reminder_seen = true
                         homeViewModel.updReminder(reminder = item)
                     }
                     //display reminder if show all is selected or reminderSeen is true
-                    if (showAllState.value || item.reminder_seen) {
+                    if (showAllState.value || item.reminder_seen ||
+                        (showNearby.value && euclideanDistance(item.location_x, item.location_y, virtualUserLat, virtualUserLng) < 0.05f && virtualUserLat != 0.0f && item.location_x != 0.0f)) {
                         //draw spacer
                         Box(modifier = Modifier
                             .fillMaxWidth()) {
@@ -269,10 +300,8 @@ fun HomeScreen(
                             homeViewModel.addReminder(reminder = it)
                             //make new work request, if we have some time or location information
                             if (it.reminder_time != "" || it.location_x != 0.0f || it.location_y != 0.0f) {
-                                //calculate time difference
-                                //reminderDelay.value = calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
                                 //create work request, notification id = current size of item list + 1
-                                setReminderRequest(context, it.message, lastNotificationId+1, it.reminder_time)
+                                setReminderRequest(context, it.message, lastNotificationId+1, it.reminder_time, it.location_x, it.location_y)
                             }
                             //update lastNotificationId value
                             lastNotificationId = it.notificationId
@@ -305,11 +334,8 @@ fun HomeScreen(
                             homeViewModel.updReminder(reminder = it) //asd
                             //replace current work request with new one, if we have some time or location information
                             if (it.reminder_time != "" || it.location_x != 0.0f || it.location_y != 0.0f) {
-                                //calculate time difference
-                                //reminderDelay.value = calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(it.reminder_time))
                                 //replace old work request
-                                replaceReminderRequest(context, it.message, it.notificationId, it.reminder_time)
-
+                                replaceReminderRequest(context, it.message, it.notificationId, it.reminder_time, it.location_x, it.location_y)
                             }
                             modifyPopupState.value = ModifyPopupState.Closed},
                         //on dismiss click close popup
@@ -326,6 +352,29 @@ fun HomeScreen(
                             }
                     )
                 }
+            }
+            //check state of modifying virtual location
+            when(modifyLocationState.value) {
+                ModifyLocationState.Active -> {
+                    ReminderLocation(
+                        lat = virtualUserLat,
+                        lng = virtualUserLng,
+                        //on save click get new lat and lng values and close popup
+                        onClickSaveLat = {
+                            virtualUserLat = it
+                        },
+                        onClickSaveLng = {
+                            virtualUserLng = it
+                            modifyLocationState.value = ModifyLocationState.Closed
+                        },
+
+                        //on cancel click close map popup
+                        onClickDismiss = {
+                            modifyLocationState.value = ModifyLocationState.Closed
+                        }
+                    )
+                }
+                ModifyLocationState.Closed -> {/* do nothing */ }
             }
         }
     }

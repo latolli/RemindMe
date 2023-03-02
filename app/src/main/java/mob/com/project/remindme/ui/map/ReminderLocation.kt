@@ -10,18 +10,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.ktx.awaitMap
 import kotlinx.coroutines.launch
-import mob.com.project.remindme.ui.theme.PurpleDefault
 import mob.com.project.remindme.utils.rememberMapViewWithLifecycle
+
 
 @Composable
 fun ReminderLocation(
@@ -50,7 +49,7 @@ fun ReminderLocation(
                     val map = mapView.awaitMap()
                     map.uiSettings.isZoomControlsEnabled = true
                     map.uiSettings.isScrollGesturesEnabled = true
-                    //if map was just opened, move camera to oulu or the location of reminder
+                    //if map was just opened, move camera to default location or the location of reminder
                     if (startState.value) {
                         if (latState.value != 0.0f) {
                             map.moveCamera(
@@ -59,14 +58,22 @@ fun ReminderLocation(
                                     10f
                                 )
                             )
+                            map.addMarker(
+                                MarkerOptions()
+                                    .position(LatLng(latState.value.toDouble(), lngState.value.toDouble()))
+                                    .title("${latState.value.toString().take(6)}, ${lngState.value.toString().take(6)}"))
                         }
                         else {
                             map.moveCamera(
                                 CameraUpdateFactory.newLatLngZoom(
-                                    LatLng(65.06, 25.47),
+                                    LatLng(37.422, -122.0),
                                     10f
                                 )
                             )
+                            map.addMarker(
+                                MarkerOptions()
+                                    .position(LatLng(37.422, -122.0))
+                                    .title("37.422, -122.0"))
                         }
                         startState.value = false
                     }
@@ -74,6 +81,11 @@ fun ReminderLocation(
                     map.setOnMapClickListener { position ->
                         latState.value = position.latitude.toFloat()
                         lngState.value = position.longitude.toFloat()
+                        map.clear()
+                        map.addMarker(
+                            MarkerOptions()
+                                .position(position)
+                                .title("${position.latitude.toString().take(6)}, ${position.longitude.toString().take(6)}"))
                     }
                 }
             }
@@ -98,17 +110,17 @@ fun ReminderLocation(
                     color = Color.White)
             }
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 70.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Lat: ${latState.value.toString().take(6)}, Lng: ${lngState.value.toString().take(6)}",
-                color = PurpleDefault,
-                style = TextStyle(fontSize = 22.sp, background = Color.White)
-            )
-        }
+        //Row(
+        //    modifier = Modifier
+        //        .fillMaxWidth()
+        //        .padding(vertical = 70.dp),
+        //    horizontalArrangement = Arrangement.Center
+        //) {
+        //    Text(
+        //        text = "Lat: ${latState.value.toString().take(6)}, Lng: ${lngState.value.toString().take(6)}",
+        //        color = PurpleDefault,
+        //        style = TextStyle(fontSize = 22.sp, background = Color.White)
+        //    )
+        //}
     }
 }

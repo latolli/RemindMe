@@ -48,3 +48,8 @@ private fun rememberMapLifecycleObserver(mapView: MapView): LifecycleObserver =
             }
         }
     }
+
+//calculate euclidean distance between two points
+fun euclideanDistance(startX: Float, startY: Float, targetX: Float, targetY: Float): Float {
+    return (startX-targetX) * (startX-targetX) + (startY-targetY) * (startY-targetY)
+}
