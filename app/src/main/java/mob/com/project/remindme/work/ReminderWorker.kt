@@ -41,13 +41,13 @@ class ReminderWorker(
         //every 10 seconds check if we have reached reminder time or are in correct location
         //if we have both location and time
         if (reminderTime != "" && reminderLat != 0.0f && reminderLng != 0.0f) {
-            while (calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(reminderTime)) > 5 && euclideanDistance(reminderLat, reminderLng, 65.06f, 25.47f) > 0.0005f) {
+            while (calculateTimeBetween(LocalDateTime.now(), LocalDateTime.parse(reminderTime)) > 5 && euclideanDistance(reminderLat, reminderLng, userLat, userLng) > 0.0005f) {
                 fusedLocationClient.lastLocation
                     .addOnSuccessListener { location : Location? ->
                         if (location != null) {
                             //Log.d("LOCATION", "${location.latitude}, ${location.longitude}")
                             //Log.d("DISTANCE", "${euclideanDistance(reminderLat, reminderLng, userLat, userLng)}")
-                            //Log.d("INFO", "$notificationId, $reminderTime, $message")
+                            //Log.d("INFO", "$notificationId: ${euclideanDistance(reminderLat, reminderLng, userLat, userLng)}")
                             userLat = location.latitude.toFloat()
                             userLng = location.longitude.toFloat()
                         }
@@ -63,13 +63,13 @@ class ReminderWorker(
         }
         //if we have only location
         else {
-            while (euclideanDistance(reminderLat, reminderLng, 65.06f, 25.47f) > 0.0005f) {
+            while (euclideanDistance(reminderLat, reminderLng, userLat, userLng) > 0.0005f) {
                 fusedLocationClient.lastLocation
                     .addOnSuccessListener { location : Location? ->
                         if (location != null) {
                             //Log.d("LOCATION", "${location.latitude}, ${location.longitude}")
                             //Log.d("DISTANCE", "${euclideanDistance(reminderLat, reminderLng, userLat, userLng)}")
-                            //Log.d("INFO", "$notificationId, $reminderTime, $message")
+                            //Log.d("INFO", "$notificationId: ${euclideanDistance(reminderLat, reminderLng, userLat, userLng)}")
                             userLat = location.latitude.toFloat()
                             userLng = location.longitude.toFloat()
                         }

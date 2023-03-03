@@ -66,13 +66,13 @@ fun ReminderLocation(
                         else {
                             map.moveCamera(
                                 CameraUpdateFactory.newLatLngZoom(
-                                    LatLng(37.422, -122.0),
+                                    LatLng(37.422672, -122.084983),
                                     10f
                                 )
                             )
                             map.addMarker(
                                 MarkerOptions()
-                                    .position(LatLng(37.422, -122.0))
+                                    .position(LatLng(37.422672, -122.084983))
                                     .title("37.422, -122.0"))
                         }
                         startState.value = false

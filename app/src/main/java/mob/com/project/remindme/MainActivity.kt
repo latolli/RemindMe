@@ -1,6 +1,7 @@
 package mob.com.project.remindme
 
 import android.Manifest
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -49,9 +51,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = WhiteSurface
                 ) {
-                    //create navController
+                    //create navController and get current context
                     val navController = rememberNavController()
-                    NavigationAppHost(navController = navController, viewModel = listViewModel)
+                    val context = LocalContext.current
+                    NavigationAppHost(navController = navController, viewModel = listViewModel, context = context)
                 }
             }
         }
@@ -59,16 +62,16 @@ class MainActivity : ComponentActivity() {
 }
 //navigation host
 @Composable
-fun NavigationAppHost(navController: NavHostController, viewModel: ListViewModel) {
+fun NavigationAppHost(navController: NavHostController, viewModel: ListViewModel, context: Context) {
     NavHost(navController = navController, startDestination = "login") {
         composable(Destination.Login.route) {
             LoginScreen(modifier = Modifier.fillMaxSize(), navHostController = navController)
         }
         composable(Destination.Home.route) {
-            HomeScreen(homeViewModel = viewModel, navHostController = navController)
+            HomeScreen(homeViewModel = viewModel, navHostController = navController, context = context)
         }
         composable(Destination.Profile.route) {
-            ProfileScreen(navHostController = navController, modifier = Modifier)
+            ProfileScreen(homeViewModel = viewModel, navHostController = navController, context = context, modifier = Modifier)
         }
     }
 }

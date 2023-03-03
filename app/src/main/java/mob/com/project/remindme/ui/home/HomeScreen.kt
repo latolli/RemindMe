@@ -1,6 +1,7 @@
 package mob.com.project.remindme.ui.home
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.location.Location
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -17,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -53,7 +53,8 @@ private enum class ModifyLocationState {
 @Composable
 fun HomeScreen(
     homeViewModel: ListViewModel,
-    navHostController: NavHostController
+    navHostController: NavHostController,
+    context: Context
 ) {
     //state for keeping track of state of reminder edit popup
     val modifyPopupState = rememberSaveable {
@@ -65,9 +66,10 @@ fun HomeScreen(
     }
 
     //initialize variables for context and work manager
-    val context = LocalContext.current
     var virtualUserLat = 0.0f
     var virtualUserLng = 0.0f
+    var userLat = 0.0f
+    var userLng = 0.0f
     //keep track of what next id should be
     var lastNotificationId = 0
     //boolean for checking if we should show all reminders or not and if we should track location
@@ -94,6 +96,8 @@ fun HomeScreen(
             if (location != null) {
                 virtualUserLat = location.latitude.toFloat()
                 virtualUserLng = location.longitude.toFloat()
+                userLat = location.latitude.toFloat()
+                userLng = location.longitude.toFloat()
             }
         }
 
@@ -180,7 +184,7 @@ fun HomeScreen(
                         }
                     }
                     if (item.location_x != 0.0f && item.location_y != 0.0f) {
-                        if (euclideanDistance(item.location_x, item.location_y, virtualUserLat, virtualUserLng) <= 0.0005f) {
+                        if (euclideanDistance(item.location_x, item.location_y, userLat, userLng) <= 0.0005f) {
                             item.reminder_seen = true
                             homeViewModel.updReminder(reminder = item)
                         }

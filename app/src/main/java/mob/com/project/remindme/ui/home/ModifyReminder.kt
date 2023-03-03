@@ -71,10 +71,10 @@ fun ModifyReminder(
 
     //dialogs
     CalendarDialog(state = calendarState,
-        selection = CalendarSelection.Date {date ->
+        selection = CalendarSelection.Date { date ->
             //if new date was selected, update state
             calendarStringState.value = "$date"
-    })
+        })
     ClockDialog(state = clockState,
         config = ClockConfig(
             is24HourFormat = true,
@@ -82,16 +82,13 @@ fun ModifyReminder(
         selection = ClockSelection.HoursMinutes { hours, minutes ->
             //if new time was selected, update state
             //if hours or minutes is smaller than 10, add 0 before the number
-            if(hours <= 9 && minutes <= 9) {
+            if (hours <= 9 && minutes <= 9) {
                 clockStringState.value = "0$hours:0$minutes:00.0"
-            }
-            else if (hours <= 9) {
+            } else if (hours <= 9) {
                 clockStringState.value = "0$hours:$minutes:00.0"
-            }
-            else if (minutes <= 9) {
+            } else if (minutes <= 9) {
                 clockStringState.value = "$hours:0$minutes:00.0"
-            }
-            else {
+            } else {
                 clockStringState.value = "$hours:$minutes:00.0"
             }
         }
@@ -107,9 +104,11 @@ fun ModifyReminder(
             horizontalAlignment = Alignment.Start
         ) {
             //top row that displays message and has delete button
-            Row(Modifier
-                .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(
+                Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 //if we are adding new reminder, don't show id and delete buttons
                 if (!isNew) {
                     Text(text = "Reminder ID: $id", color = Color.Black)
@@ -119,20 +118,22 @@ fun ModifyReminder(
                             .size(24.dp)
                             .clickable { onClickDelete() }
                     )
-                }
-                else {
+                } else {
                     Text(text = "New reminder", color = Color.Black)
                 }
             }
             Spacer(modifier = Modifier.height(30.dp))
             //middle row that displays all the reminder data
-            Row(Modifier
-                .fillMaxWidth()) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+            ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     //field for modifying message
-                    OutlinedTextField(value = messageState.value,
+                    OutlinedTextField(
+                        value = messageState.value,
                         modifier = Modifier.fillMaxWidth(),
-                        onValueChange = { text -> messageState.value = text},
+                        onValueChange = { text -> messageState.value = text },
                         label = { androidx.compose.material.Text(text = "Message") },
                         shape = RoundedCornerShape(corner = CornerSize(50.dp))
                     )
@@ -140,9 +141,11 @@ fun ModifyReminder(
                     //date and time pickers
                     Text(text = "Pick reminder time:", color = Color.Black)
                     Spacer(modifier = Modifier.height(20.dp))
-                    Row(Modifier
-                        .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
                         Image(painter = painterResource(id = R.drawable.calendarpurple),
                             contentDescription = "Calendar image",
                             modifier = Modifier
@@ -150,10 +153,10 @@ fun ModifyReminder(
                                 .clickable { calendarState.show() }
                         )
                         Image(painter = painterResource(id = R.drawable.clockpurple),
-                        contentDescription = "Calendar image",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable { clockState.show() }
+                            contentDescription = "Calendar image",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable { clockState.show() }
                         )
                     }
 
@@ -161,8 +164,8 @@ fun ModifyReminder(
                     //button for picking location
                     androidx.compose.material.Button(
                         onClick = {//navHostController.navigate(Destination.Map.route)
-                                modifyMapState.value = ModifyMapState.Active
-                            },
+                            modifyMapState.value = ModifyMapState.Active
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
@@ -171,7 +174,11 @@ fun ModifyReminder(
                         androidx.compose.material.Text(text = "Pick location")
                     }
                     Spacer(modifier = Modifier.height(20.dp))
-                    Text(text = "Lat: ${latState.value.toString().take(6)}, Lng: ${lngState.value.toString().take(6)}", color = Color.Black)
+                    Text(
+                        text = "Lat: ${
+                            latState.value.toString().take(6)
+                        }, Lng: ${lngState.value.toString().take(6)}", color = Color.Black
+                    )
                     Spacer(modifier = Modifier.height(30.dp))
                 }
             }
@@ -199,6 +206,10 @@ fun ModifyReminder(
                                     "${calendarStringState.value}T${clockStringState.value}"
                                 reminderSeenState.value = false
                             }
+                            //if new location was picked, set reminder seen to false
+                            if (latState.value != 0.0f && lngState.value != 0.0f) {
+                                reminderSeenState.value = false
+                            }
 
                             onClickSave(
                                 ReminderEntity(
@@ -218,7 +229,7 @@ fun ModifyReminder(
             }
         }
     }
-    when(modifyMapState.value) {
+    when (modifyMapState.value) {
         //if map is active
         ModifyMapState.Active -> {
             ReminderLocation(
@@ -240,6 +251,7 @@ fun ModifyReminder(
             )
         }
         //if map is closed
-        ModifyMapState.Closed -> {/* do nothing */ }
+        ModifyMapState.Closed -> {/* do nothing */
+        }
     }
 }
